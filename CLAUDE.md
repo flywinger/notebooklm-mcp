@@ -178,6 +178,9 @@ The `f.req` structure:
 | `QA9ei` | Start Deep Research | `[null, [1], ["query", source_type], 5, "notebook_id"]` |
 | `e3bVqc` | Poll Research Results | `[null, null, "notebook_id"]` |
 | `LBwxtb` | Import Research Sources | `[null, [1], "task_id", "notebook_id", [sources]]` |
+| `R7cb6c` | Create Studio Content | See Studio RPCs section |
+| `gArtLc` | Poll Studio Status | `[[2], notebook_id, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"']` |
+| `V5N4be` | Delete Studio Content | `[[2], "artifact_id"]` |
 
 ### Source Types (via `izAoDd` RPC)
 
@@ -393,6 +396,135 @@ Imports selected sources from research results into the notebook.
 - **Drive URLs format**: `https://drive.google.com/a/redhat.com/open?id=<document_id>`
 - **Web URLs**: Standard HTTP/HTTPS URLs
 
+### Studio RPCs (Audio/Video Overviews)
+
+NotebookLM's "Studio" feature generates audio podcasts and video overviews from notebook sources.
+
+#### `R7cb6c` - Create Studio Content
+
+Creates both Audio and Video Overviews using the same RPC, distinguished by type code.
+
+##### Audio Overview Request
+```python
+params = [
+    [2],                           # Config
+    notebook_id,                   # Notebook UUID
+    [
+        None, None,
+        1,                         # STUDIO_TYPE_AUDIO
+        [[[source_id1]], [[source_id2]], ...],  # Source IDs (nested arrays)
+        None, None,
+        [
+            None,
+            [
+                focus_prompt,      # Focus text (what AI should focus on)
+                length_code,       # 1=Short, 2=Default, 3=Long
+                None,
+                [[source_id1], [source_id2], ...],  # Source IDs (simpler format)
+                language_code,     # "en", "es", etc.
+                None,
+                format_code        # 1=Deep Dive, 2=Brief, 3=Critique, 4=Debate
+            ]
+        ]
+    ]
+]
+```
+
+##### Video Overview Request
+```python
+params = [
+    [2],                           # Config
+    notebook_id,                   # Notebook UUID
+    [
+        None, None,
+        3,                         # STUDIO_TYPE_VIDEO
+        [[[source_id1]], [[source_id2]], ...],  # Source IDs (nested arrays)
+        None, None, None, None,
+        [
+            None, None,
+            [
+                [[source_id1], [source_id2], ...],  # Source IDs
+                language_code,     # "en", "es", etc.
+                focus_prompt,      # Focus text
+                None,
+                format_code,       # 1=Explainer, 2=Brief
+                visual_style_code  # 1=Auto, 2=Custom, 3=Classic, etc.
+            ]
+        ]
+    ]
+]
+```
+
+##### Response Structure
+```python
+# Returns: [[artifact_id, title, type, sources, status, ...]]
+# status: 1 = in_progress, 3 = completed
+```
+
+#### `gArtLc` - Poll Studio Status
+
+Polls for audio/video generation status.
+
+```python
+# Request
+params = [[2], notebook_id, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"']
+
+# Response includes:
+# - artifact_id (UUID of generated content)
+# - type (1 = Audio, 3 = Video)
+# - status (1 = in_progress, 3 = completed)
+# - Audio/Video URLs when completed
+# - Duration (for audio)
+```
+
+#### `V5N4be` - Delete Studio Content
+
+Deletes an audio or video overview artifact permanently.
+
+```python
+# Request
+params = [[2], "artifact_id"]
+
+# Response
+[]  # Empty array on success
+```
+
+**WARNING:** This action is IRREVERSIBLE. The artifact is permanently deleted.
+
+#### Audio Options
+
+| Option | Values |
+|--------|--------|
+| **Formats** | 1=Deep Dive (conversation), 2=Brief, 3=Critique, 4=Debate |
+| **Lengths** | 1=Short, 2=Default, 3=Long |
+| **Languages** | BCP-47 codes: "en", "es", "fr", "de", "ja", etc. |
+
+#### Video Options
+
+| Option | Values |
+|--------|--------|
+| **Formats** | 1=Explainer (comprehensive), 2=Brief |
+| **Visual Styles** | 1=Auto-select, 2=Custom, 3=Classic, 4=Whiteboard, 5=Kawaii, 6=Anime, 7=Watercolor, 8=Retro print, 9=Heritage, 10=Paper-craft |
+| **Languages** | BCP-47 codes: "en", "es", "fr", "de", "ja", etc. |
+
+#### Studio Flow Summary
+
+```
+1. Create Studio Content
+   ├── Audio: R7cb6c with type=1 and audio options
+   └── Video: R7cb6c with type=3 and video options
+
+2. Returns immediately with artifact_id (status=in_progress)
+
+3. Poll Status
+   └── gArtLc → repeat until status=3 (completed)
+
+4. When complete, response includes download URLs
+
+5. Delete (optional)
+   └── V5N4be with artifact_id → permanently removes content
+```
+
 ### Key Findings
 
 1. **Filtering is client-side**: The `wXbhsf` RPC returns ALL notebooks. "My notebooks" vs "Shared with me" filtering happens in the browser.
@@ -424,18 +556,28 @@ Imports selected sources from research results into the notebook.
 | `notebook_query` | Ask questions (AI answers!) |
 | `source_list_drive` | List sources with types, check Drive freshness |
 | `source_sync_drive` | Sync stale Drive sources (REQUIRES confirmation) |
+| `research_start` | Start Web or Drive research to discover sources |
+| `research_status` | Check research progress and get results |
+| `research_import` | Import discovered sources into notebook |
+| `audio_overview_create` | Generate audio podcasts (REQUIRES confirmation) |
+| `video_overview_create` | Generate video overviews (REQUIRES confirmation) |
+| `studio_status` | Check audio/video generation status |
+| `studio_delete` | Delete audio/video overviews (REQUIRES confirmation) |
 | `save_auth_tokens` | Save tokens extracted via Chrome DevTools MCP |
 
 **IMPORTANT - Operations Requiring Confirmation:**
 - `notebook_delete` requires `confirm=True` - deletion is IRREVERSIBLE
 - `source_sync_drive` requires `confirm=True` - always show stale sources first via `source_list_drive`
+- `audio_overview_create` requires `confirm=True` - show settings and get user approval first
+- `video_overview_create` requires `confirm=True` - show settings and get user approval first
+- `studio_delete` requires `confirm=True` - list artifacts first via `studio_status`, deletion is IRREVERSIBLE
 
 ## Features NOT Yet Implemented
 
 Consumer NotebookLM has many more features than Enterprise. To explore:
 
-- [ ] **Audio Overviews** - Generate podcast-style discussions
-- [ ] **Video Overviews** - Generate explainer videos
+- [x] **Audio Overviews** - Generate podcast-style discussions (tools: `audio_overview_create`, `studio_status`, `studio_delete`)
+- [x] **Video Overviews** - Generate explainer videos (tools: `video_overview_create`, `studio_status`, `studio_delete`)
 - [ ] **Mind Maps** - Visual knowledge maps
 - [ ] **Flashcards** - Study cards from sources
 - [ ] **Quizzes** - Interactive quizzes

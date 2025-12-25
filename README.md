@@ -22,6 +22,10 @@ An MCP server for **Consumer NotebookLM** (notebooklm.google.com) - the free/per
 | `research_start` | Start Web or Drive research to discover sources |
 | `research_status` | Poll research progress with built-in wait |
 | `research_import` | Import discovered sources into notebook |
+| `audio_overview_create` | Generate audio podcasts (requires confirmation) |
+| `video_overview_create` | Generate video overviews (requires confirmation) |
+| `studio_status` | Check audio/video generation status |
+| `studio_delete` | Delete audio/video overviews (requires confirmation) |
 | `save_auth_tokens` | Save cookies for authentication |
 
 ## Important Disclaimer
@@ -179,6 +183,48 @@ research_import(
 - `fast` + `web`: Quick web search, ~10 sources in ~30 seconds
 - `deep` + `web`: Extended research with AI report, ~40 sources in 3-5 minutes
 - `fast` + `drive`: Quick Google Drive search, ~10 sources in ~30 seconds
+
+### Generate Audio/Video Overviews
+```python
+# Create an audio overview (podcast)
+result = audio_overview_create(
+    notebook_id=notebook_id,
+    format="deep_dive",  # deep_dive, brief, critique, debate
+    length="default",    # short, default, long
+    language="en",
+    confirm=True         # Required - show settings first, then confirm
+)
+
+# Create a video overview
+result = video_overview_create(
+    notebook_id=notebook_id,
+    format="explainer",      # explainer, brief
+    visual_style="classic",  # auto_select, classic, whiteboard, kawaii, anime, etc.
+    language="en",
+    confirm=True
+)
+
+# Check generation status (takes several minutes)
+status = studio_status(notebook_id)
+for artifact in status["artifacts"]:
+    print(f"{artifact['title']}: {artifact['status']}")
+    if artifact["audio_url"]:
+        print(f"  Audio: {artifact['audio_url']}")
+    if artifact["video_url"]:
+        print(f"  Video: {artifact['video_url']}")
+
+# Delete an artifact (after user confirmation)
+studio_delete(
+    notebook_id=notebook_id,
+    artifact_id="artifact-uuid",
+    confirm=True
+)
+```
+
+**Audio Formats:** deep_dive (conversation), brief, critique, debate
+**Audio Lengths:** short, default, long
+**Video Formats:** explainer, brief
+**Video Styles:** auto_select, classic, whiteboard, kawaii, anime, watercolor, retro_print, heritage, paper_craft
 
 ## Consumer vs Enterprise
 

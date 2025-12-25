@@ -46,6 +46,10 @@ extracted from the page when needed.
 - research_start: Start Web or Drive research to discover sources
 - research_status: Check research progress and get results
 - research_import: Import discovered sources into notebook
+- audio_overview_create: Generate audio overviews (podcasts) from sources
+- video_overview_create: Generate video overviews from sources
+- studio_status: Check audio/video generation status
+- studio_delete: Delete audio/video overviews (REQUIRES user confirmation)
 - save_auth_tokens: Save cookies for authentication
 
 ## Research Feature
@@ -65,9 +69,23 @@ To sync outdated Google Drive sources:
 3. Ask the user to confirm which sources to sync
 4. Call source_sync_drive(source_ids, confirm=True) with the confirmed source IDs
 
-## IMPORTANT: Destructive/Modifying Operations
+## Studio Features (Audio/Video Overviews)
 
-For notebook_delete and source_sync_drive, you MUST:
+To generate audio or video overviews:
+1. Call audio_overview_create or video_overview_create with notebook_id and options (confirm=False)
+2. Show the user the proposed settings and ask for confirmation
+3. Call again with confirm=True to start generation
+4. Generation takes several minutes - the tool returns immediately with artifact_id
+5. Call studio_status(notebook_id) to check progress and get URLs when complete
+
+Audio formats: deep_dive, brief, critique, debate
+Audio lengths: short, default, long
+Video formats: explainer, brief
+Video styles: auto_select, classic, whiteboard, kawaii, anime, watercolor, retro_print, heritage, paper_craft
+
+## IMPORTANT: Confirmation Required Operations
+
+For audio_overview_create, video_overview_create, notebook_delete, studio_delete, and source_sync_drive, you MUST:
 1. Warn the user about the operation
 2. Ask the user explicitly to confirm before proceeding
 3. Only set confirm=True after the user approves
@@ -806,6 +824,337 @@ def research_import(
             "sources": imported,
             "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
         }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+def audio_overview_create(
+    notebook_id: str,
+    source_ids: list[str] | None = None,
+    format: str = "deep_dive",
+    length: str = "default",
+    language: str = "en",
+    focus_prompt: str = "",
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Generate an audio overview (podcast) from notebook sources.
+
+    Generation takes several minutes. Use studio_status to check progress.
+
+    IMPORTANT: Before calling this tool, you MUST:
+    1. Show the user the settings (format, length, language, focus_prompt)
+    2. Ask the user to confirm they want to proceed
+    3. Only set confirm=True after user approval
+
+    Args:
+        notebook_id: The notebook UUID
+        source_ids: Optional list of source IDs to include (default: all sources)
+        format: Audio format - "deep_dive" (default), "brief", "critique", or "debate"
+            - deep_dive: Lively conversation between two hosts, unpacking topics
+            - brief: Bite-sized overview to grasp core ideas quickly
+            - critique: Expert review offering constructive feedback
+            - debate: Thoughtful debate illuminating different perspectives
+        length: Length - "short", "default", or "long"
+        language: BCP-47 language code (e.g., "en", "es", "fr", "de", "ja")
+        focus_prompt: Optional text describing what AI should focus on
+        confirm: Must be True to proceed. Show settings and get user confirmation first.
+
+    Returns:
+        Dictionary with artifact_id and status. Call studio_status to check progress.
+    """
+    if not confirm:
+        return {
+            "status": "pending_confirmation",
+            "message": "Please confirm these settings before creating the audio overview:",
+            "settings": {
+                "notebook_id": notebook_id,
+                "format": format,
+                "length": length,
+                "language": language,
+                "focus_prompt": focus_prompt or "(none)",
+                "source_ids": source_ids or "all sources",
+            },
+            "note": "Set confirm=True after user approves these settings.",
+        }
+
+    try:
+        client = get_client()
+
+        # Map format string to code
+        format_codes = {
+            "deep_dive": 1,
+            "brief": 2,
+            "critique": 3,
+            "debate": 4,
+        }
+        format_code = format_codes.get(format.lower())
+        if format_code is None:
+            return {
+                "status": "error",
+                "error": f"Unknown format '{format}'. Use: deep_dive, brief, critique, or debate.",
+            }
+
+        # Map length string to code
+        length_codes = {
+            "short": 1,
+            "default": 2,
+            "long": 3,
+        }
+        length_code = length_codes.get(length.lower())
+        if length_code is None:
+            return {
+                "status": "error",
+                "error": f"Unknown length '{length}'. Use: short, default, or long.",
+            }
+
+        # Get source IDs if not provided
+        if source_ids is None:
+            sources = client.get_notebook_sources_with_types(notebook_id)
+            source_ids = [s["id"] for s in sources if s["id"]]
+
+        if not source_ids:
+            return {
+                "status": "error",
+                "error": "No sources found in notebook. Add sources before creating audio overview.",
+            }
+
+        result = client.create_audio_overview(
+            notebook_id=notebook_id,
+            source_ids=source_ids,
+            format_code=format_code,
+            length_code=length_code,
+            language=language,
+            focus_prompt=focus_prompt,
+        )
+
+        if result:
+            return {
+                "status": "success",
+                "artifact_id": result["artifact_id"],
+                "type": "audio",
+                "format": result["format"],
+                "length": result["length"],
+                "language": result["language"],
+                "generation_status": result["status"],
+                "message": "Audio generation started. Use studio_status to check progress.",
+                "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
+            }
+        return {"status": "error", "error": "Failed to create audio overview"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+def video_overview_create(
+    notebook_id: str,
+    source_ids: list[str] | None = None,
+    format: str = "explainer",
+    visual_style: str = "auto_select",
+    language: str = "en",
+    focus_prompt: str = "",
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Generate a video overview from notebook sources.
+
+    Generation takes several minutes. Use studio_status to check progress.
+
+    IMPORTANT: Before calling this tool, you MUST:
+    1. Show the user the settings (format, visual_style, language, focus_prompt)
+    2. Ask the user to confirm they want to proceed
+    3. Only set confirm=True after user approval
+
+    Args:
+        notebook_id: The notebook UUID
+        source_ids: Optional list of source IDs to include (default: all sources)
+        format: Video format - "explainer" (default) or "brief"
+            - explainer: Structured, comprehensive overview
+            - brief: Bite-sized overview of core ideas
+        visual_style: Visual style for the video:
+            - auto_select (default): AI chooses best style
+            - classic: Traditional educational style
+            - whiteboard: Hand-drawn whiteboard style
+            - kawaii: Cute, colorful style
+            - anime: Japanese animation style
+            - watercolor: Artistic watercolor style
+            - retro_print: Vintage print style
+            - heritage: Classic historical style
+            - paper_craft: Papercut/origami style
+        language: BCP-47 language code (e.g., "en", "es", "fr", "de", "ja")
+        focus_prompt: Optional text describing what AI should focus on
+        confirm: Must be True to proceed. Show settings and get user confirmation first.
+
+    Returns:
+        Dictionary with artifact_id and status. Call studio_status to check progress.
+    """
+    if not confirm:
+        return {
+            "status": "pending_confirmation",
+            "message": "Please confirm these settings before creating the video overview:",
+            "settings": {
+                "notebook_id": notebook_id,
+                "format": format,
+                "visual_style": visual_style,
+                "language": language,
+                "focus_prompt": focus_prompt or "(none)",
+                "source_ids": source_ids or "all sources",
+            },
+            "note": "Set confirm=True after user approves these settings.",
+        }
+
+    try:
+        client = get_client()
+
+        # Map format string to code
+        format_codes = {
+            "explainer": 1,
+            "brief": 2,
+        }
+        format_code = format_codes.get(format.lower())
+        if format_code is None:
+            return {
+                "status": "error",
+                "error": f"Unknown format '{format}'. Use: explainer or brief.",
+            }
+
+        # Map style string to code
+        style_codes = {
+            "auto_select": 1,
+            "custom": 2,
+            "classic": 3,
+            "whiteboard": 4,
+            "kawaii": 5,
+            "anime": 6,
+            "watercolor": 7,
+            "retro_print": 8,
+            "heritage": 9,
+            "paper_craft": 10,
+        }
+        style_code = style_codes.get(visual_style.lower())
+        if style_code is None:
+            valid_styles = ", ".join(style_codes.keys())
+            return {
+                "status": "error",
+                "error": f"Unknown visual_style '{visual_style}'. Use: {valid_styles}",
+            }
+
+        # Get source IDs if not provided
+        if source_ids is None:
+            sources = client.get_notebook_sources_with_types(notebook_id)
+            source_ids = [s["id"] for s in sources if s["id"]]
+
+        if not source_ids:
+            return {
+                "status": "error",
+                "error": "No sources found in notebook. Add sources before creating video overview.",
+            }
+
+        result = client.create_video_overview(
+            notebook_id=notebook_id,
+            source_ids=source_ids,
+            format_code=format_code,
+            visual_style_code=style_code,
+            language=language,
+            focus_prompt=focus_prompt,
+        )
+
+        if result:
+            return {
+                "status": "success",
+                "artifact_id": result["artifact_id"],
+                "type": "video",
+                "format": result["format"],
+                "visual_style": result["visual_style"],
+                "language": result["language"],
+                "generation_status": result["status"],
+                "message": "Video generation started. Use studio_status to check progress.",
+                "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
+            }
+        return {"status": "error", "error": "Failed to create video overview"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+def studio_status(notebook_id: str) -> dict[str, Any]:
+    """Check the status of audio/video overview generation.
+
+    Call this after audio_overview_create or video_overview_create to check
+    if generation is complete and get URLs to the generated content.
+
+    Args:
+        notebook_id: The notebook UUID
+
+    Returns:
+        Dictionary with list of artifacts and their status/URLs
+    """
+    try:
+        client = get_client()
+        artifacts = client.poll_studio_status(notebook_id)
+
+        # Separate by status
+        completed = [a for a in artifacts if a["status"] == "completed"]
+        in_progress = [a for a in artifacts if a["status"] == "in_progress"]
+
+        return {
+            "status": "success",
+            "notebook_id": notebook_id,
+            "summary": {
+                "total": len(artifacts),
+                "completed": len(completed),
+                "in_progress": len(in_progress),
+            },
+            "artifacts": artifacts,
+            "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+def studio_delete(
+    notebook_id: str,
+    artifact_id: str,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Delete a studio artifact (Audio or Video Overview).
+
+    WARNING: This action is IRREVERSIBLE. The artifact will be permanently deleted.
+
+    IMPORTANT: Before calling this tool, you MUST:
+    1. Call studio_status to list available artifacts
+    2. Show the user which artifact will be deleted (title, type)
+    3. Ask the user to confirm they want to delete it
+    4. Only set confirm=True after user approval
+
+    Args:
+        notebook_id: The notebook UUID (for reference/validation)
+        artifact_id: The artifact UUID to delete (from studio_status)
+        confirm: Must be True to proceed. Set to False by default as a safety measure.
+
+    Returns:
+        Dictionary with deletion status
+    """
+    if not confirm:
+        return {
+            "status": "error",
+            "error": "Deletion not confirmed. You must ask the user to confirm "
+                     "before deleting. Set confirm=True only after user approval.",
+            "warning": "This action is IRREVERSIBLE. The artifact will be permanently deleted.",
+            "hint": "First call studio_status to list artifacts with their IDs and titles.",
+        }
+
+    try:
+        client = get_client()
+        result = client.delete_studio_artifact(artifact_id)
+
+        if result:
+            return {
+                "status": "success",
+                "message": f"Artifact {artifact_id} has been permanently deleted.",
+                "notebook_id": notebook_id,
+            }
+        return {"status": "error", "error": "Failed to delete artifact"}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 

@@ -142,6 +142,42 @@ class ConsumerNotebookLMClient:
     RESULT_TYPE_DEEP_REPORT = 5
     RESULT_TYPE_GOOGLE_SHEETS = 8
 
+    # Studio RPCs (Audio/Video Overviews)
+    RPC_CREATE_STUDIO = "R7cb6c"   # Create Audio or Video Overview
+    RPC_POLL_STUDIO = "gArtLc"     # Poll for studio content status
+    RPC_DELETE_STUDIO = "V5N4be"   # Delete Audio or Video Overview
+
+    # Studio content types
+    STUDIO_TYPE_AUDIO = 1
+    STUDIO_TYPE_VIDEO = 3
+
+    # Audio Overview formats
+    AUDIO_FORMAT_DEEP_DIVE = 1   # Lively conversation between two hosts
+    AUDIO_FORMAT_BRIEF = 2       # Bite-sized overview of core ideas
+    AUDIO_FORMAT_CRITIQUE = 3    # Expert review offering feedback
+    AUDIO_FORMAT_DEBATE = 4      # Thoughtful debate with different perspectives
+
+    # Audio Overview lengths
+    AUDIO_LENGTH_SHORT = 1
+    AUDIO_LENGTH_DEFAULT = 2
+    AUDIO_LENGTH_LONG = 3
+
+    # Video Overview formats
+    VIDEO_FORMAT_EXPLAINER = 1   # Structured, comprehensive overview
+    VIDEO_FORMAT_BRIEF = 2       # Bite-sized overview of core ideas
+
+    # Video visual styles
+    VIDEO_STYLE_AUTO_SELECT = 1
+    VIDEO_STYLE_CUSTOM = 2
+    VIDEO_STYLE_CLASSIC = 3
+    VIDEO_STYLE_WHITEBOARD = 4
+    VIDEO_STYLE_KAWAII = 5
+    VIDEO_STYLE_ANIME = 6
+    VIDEO_STYLE_WATERCOLOR = 7
+    VIDEO_STYLE_RETRO_PRINT = 8
+    VIDEO_STYLE_HERITAGE = 9
+    VIDEO_STYLE_PAPER_CRAFT = 10
+
     # Source type constants (from metadata position 4)
     # These represent the Google Workspace document type, NOT the source origin
     SOURCE_TYPE_GOOGLE_DOCS = 1           # Google Docs (Documents)
@@ -1223,6 +1259,318 @@ class ConsumerNotebookLMClient:
                         imported_sources.append({"id": src_id, "title": src_title})
 
         return imported_sources
+
+    def create_audio_overview(
+        self,
+        notebook_id: str,
+        source_ids: list[str],
+        format_code: int = 1,  # AUDIO_FORMAT_DEEP_DIVE
+        length_code: int = 2,  # AUDIO_LENGTH_DEFAULT
+        language: str = "en",
+        focus_prompt: str = "",
+    ) -> dict | None:
+        """Create an Audio Overview (podcast) for a notebook.
+
+        Args:
+            notebook_id: The notebook UUID
+            source_ids: List of source UUIDs to include
+            format_code: Audio format (1=Deep Dive, 2=Brief, 3=Critique, 4=Debate)
+            length_code: Length (1=Short, 2=Default, 3=Long)
+            language: BCP-47 language code (e.g., "en", "es", "fr")
+            focus_prompt: Optional text describing what AI should focus on
+
+        Returns:
+            Dict with artifact_id and status, or None on failure
+        """
+        client = self._get_client()
+
+        # Build source IDs in the nested format: [[[id1]], [[id2]], ...]
+        sources_nested = [[[sid]] for sid in source_ids]
+
+        # Build source IDs in the simpler format: [[id1], [id2], ...]
+        sources_simple = [[sid] for sid in source_ids]
+
+        # Build the audio options structure
+        audio_options = [
+            None,
+            [
+                focus_prompt,
+                length_code,
+                None,
+                sources_simple,
+                language,
+                None,
+                format_code
+            ]
+        ]
+
+        # Build the full params
+        params = [
+            [2],
+            notebook_id,
+            [
+                None, None,
+                self.STUDIO_TYPE_AUDIO,
+                sources_nested,
+                None, None,
+                audio_options
+            ]
+        ]
+
+        body = self._build_request_body(self.RPC_CREATE_STUDIO, params)
+        url = self._build_url(self.RPC_CREATE_STUDIO, f"/notebook/{notebook_id}")
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_CREATE_STUDIO)
+
+        if result and isinstance(result, list) and len(result) > 0:
+            # Response: [[artifact_id, title, type, sources, status, ...]]
+            artifact_data = result[0]
+            artifact_id = artifact_data[0] if isinstance(artifact_data, list) and len(artifact_data) > 0 else None
+            status_code = artifact_data[4] if isinstance(artifact_data, list) and len(artifact_data) > 4 else None
+
+            return {
+                "artifact_id": artifact_id,
+                "notebook_id": notebook_id,
+                "type": "audio",
+                "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
+                "format": self._get_audio_format_name(format_code),
+                "length": self._get_audio_length_name(length_code),
+                "language": language,
+            }
+
+        return None
+
+    def create_video_overview(
+        self,
+        notebook_id: str,
+        source_ids: list[str],
+        format_code: int = 1,  # VIDEO_FORMAT_EXPLAINER
+        visual_style_code: int = 1,  # VIDEO_STYLE_AUTO_SELECT
+        language: str = "en",
+        focus_prompt: str = "",
+    ) -> dict | None:
+        """Create a Video Overview for a notebook.
+
+        Args:
+            notebook_id: The notebook UUID
+            source_ids: List of source UUIDs to include
+            format_code: Video format (1=Explainer, 2=Brief)
+            visual_style_code: Visual style (1=Auto, 2=Custom, 3=Classic, etc.)
+            language: BCP-47 language code (e.g., "en", "es", "fr")
+            focus_prompt: Optional text describing what AI should focus on
+
+        Returns:
+            Dict with artifact_id and status, or None on failure
+        """
+        client = self._get_client()
+
+        # Build source IDs in the nested format: [[[id1]], [[id2]], ...]
+        sources_nested = [[[sid]] for sid in source_ids]
+
+        # Build source IDs in the simpler format: [[id1], [id2], ...]
+        sources_simple = [[sid] for sid in source_ids]
+
+        # Build the video options structure
+        video_options = [
+            None, None,
+            [
+                sources_simple,
+                language,
+                focus_prompt,
+                None,
+                format_code,
+                visual_style_code
+            ]
+        ]
+
+        # Build the full params
+        params = [
+            [2],
+            notebook_id,
+            [
+                None, None,
+                self.STUDIO_TYPE_VIDEO,
+                sources_nested,
+                None, None, None, None,
+                video_options
+            ]
+        ]
+
+        body = self._build_request_body(self.RPC_CREATE_STUDIO, params)
+        url = self._build_url(self.RPC_CREATE_STUDIO, f"/notebook/{notebook_id}")
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_CREATE_STUDIO)
+
+        if result and isinstance(result, list) and len(result) > 0:
+            # Response: [[artifact_id, title, type, sources, status, ...]]
+            artifact_data = result[0]
+            artifact_id = artifact_data[0] if isinstance(artifact_data, list) and len(artifact_data) > 0 else None
+            status_code = artifact_data[4] if isinstance(artifact_data, list) and len(artifact_data) > 4 else None
+
+            return {
+                "artifact_id": artifact_id,
+                "notebook_id": notebook_id,
+                "type": "video",
+                "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
+                "format": self._get_video_format_name(format_code),
+                "visual_style": self._get_video_style_name(visual_style_code),
+                "language": language,
+            }
+
+        return None
+
+    def poll_studio_status(self, notebook_id: str) -> list[dict]:
+        """Poll for studio content (audio/video overviews) status.
+
+        Args:
+            notebook_id: The notebook UUID
+
+        Returns:
+            List of studio artifacts with their status and URLs
+        """
+        client = self._get_client()
+
+        # Poll params: [[2], notebook_id, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"']
+        params = [[2], notebook_id, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"']
+        body = self._build_request_body(self.RPC_POLL_STUDIO, params)
+        url = self._build_url(self.RPC_POLL_STUDIO, f"/notebook/{notebook_id}")
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_POLL_STUDIO)
+
+        artifacts = []
+        if result and isinstance(result, list) and len(result) > 0:
+            # Response is an array of artifacts, possibly wrapped
+            artifact_list = result[0] if isinstance(result[0], list) else result
+
+            for artifact_data in artifact_list:
+                if not isinstance(artifact_data, list) or len(artifact_data) < 5:
+                    continue
+
+                artifact_id = artifact_data[0]
+                title = artifact_data[1] if len(artifact_data) > 1 else ""
+                type_code = artifact_data[2] if len(artifact_data) > 2 else None
+                status_code = artifact_data[4] if len(artifact_data) > 4 else None
+
+                # Extract audio/video URLs from the options structure
+                audio_url = None
+                video_url = None
+                duration_seconds = None
+
+                # Audio artifacts have URLs at position 6
+                if type_code == self.STUDIO_TYPE_AUDIO and len(artifact_data) > 6:
+                    audio_options = artifact_data[6]
+                    if isinstance(audio_options, list) and len(audio_options) > 3:
+                        audio_url = audio_options[3] if isinstance(audio_options[3], str) else None
+                        # Duration is often at position 9
+                        if len(audio_options) > 9 and isinstance(audio_options[9], list):
+                            duration_seconds = audio_options[9][0] if audio_options[9] else None
+
+                # Video artifacts have URLs at position 8
+                if type_code == self.STUDIO_TYPE_VIDEO and len(artifact_data) > 8:
+                    video_options = artifact_data[8]
+                    if isinstance(video_options, list) and len(video_options) > 3:
+                        video_url = video_options[3] if isinstance(video_options[3], str) else None
+
+                artifact_type = "audio" if type_code == self.STUDIO_TYPE_AUDIO else "video" if type_code == self.STUDIO_TYPE_VIDEO else "unknown"
+                status = "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown"
+
+                artifacts.append({
+                    "artifact_id": artifact_id,
+                    "title": title,
+                    "type": artifact_type,
+                    "status": status,
+                    "audio_url": audio_url,
+                    "video_url": video_url,
+                    "duration_seconds": duration_seconds,
+                })
+
+        return artifacts
+
+    def delete_studio_artifact(self, artifact_id: str) -> bool:
+        """Delete a studio artifact (Audio or Video Overview).
+
+        WARNING: This action is IRREVERSIBLE. The artifact will be permanently deleted.
+
+        Args:
+            artifact_id: The artifact UUID to delete
+
+        Returns:
+            True on success, False on failure
+        """
+        client = self._get_client()
+
+        # Delete studio artifact params: [[2], "artifact_id"]
+        params = [[2], artifact_id]
+        body = self._build_request_body(self.RPC_DELETE_STUDIO, params)
+        url = self._build_url(self.RPC_DELETE_STUDIO)
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_DELETE_STUDIO)
+
+        # Success returns empty list []
+        return result is not None
+
+    @staticmethod
+    def _get_audio_format_name(format_code: int) -> str:
+        """Convert audio format code to human-readable name."""
+        formats = {
+            1: "deep_dive",
+            2: "brief",
+            3: "critique",
+            4: "debate",
+        }
+        return formats.get(format_code, "unknown")
+
+    @staticmethod
+    def _get_audio_length_name(length_code: int) -> str:
+        """Convert audio length code to human-readable name."""
+        lengths = {
+            1: "short",
+            2: "default",
+            3: "long",
+        }
+        return lengths.get(length_code, "unknown")
+
+    @staticmethod
+    def _get_video_format_name(format_code: int) -> str:
+        """Convert video format code to human-readable name."""
+        formats = {
+            1: "explainer",
+            2: "brief",
+        }
+        return formats.get(format_code, "unknown")
+
+    @staticmethod
+    def _get_video_style_name(style_code: int) -> str:
+        """Convert video style code to human-readable name."""
+        styles = {
+            1: "auto_select",
+            2: "custom",
+            3: "classic",
+            4: "whiteboard",
+            5: "kawaii",
+            6: "anime",
+            7: "watercolor",
+            8: "retro_print",
+            9: "heritage",
+            10: "paper_craft",
+        }
+        return styles.get(style_code, "unknown")
 
     def close(self) -> None:
         """Close the HTTP client."""
