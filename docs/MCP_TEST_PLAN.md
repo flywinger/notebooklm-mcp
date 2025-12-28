@@ -6,6 +6,43 @@
 - MCP server installed: `uv cache clean && uv tool install --force .`
 - Valid authentication cookies saved
 
+## Automated Testing with Claude Code or Advanced AI Tools
+
+**You can automate this entire test plan using Claude Code or any advanced AI tool with MCP support!**
+
+### Running Automated Tests
+
+Simply ask your AI assistant to:
+```
+Run the automated tests from docs/MCP_TEST_PLAN.md. For the Drive sync test,
+pause before checking freshness, ask me to make a change to the doc, then
+verify both staleness detection and sync functionality work correctly.
+```
+
+### How Automation Works
+
+Your AI assistant will:
+1. **Execute tests sequentially** - Run through each test group automatically
+2. **Track progress** - Use a todo list to show what's being tested
+3. **Pause for user input** - Stop at Drive sync test to ask you to modify a document
+4. **Validate end-to-end** - Confirm both out-of-sync detection and sync functionality
+5. **Report results** - Provide a comprehensive summary of all tests
+
+### Benefits of Automation
+
+- ✅ **Faster testing** - Complete all 30 tools in minutes instead of hours
+- ✅ **Consistent validation** - Every tool tested the same way each time
+- ✅ **Full coverage** - No skipped tests or missed edge cases
+- ✅ **Interactive verification** - AI pauses for critical validations (like Drive sync)
+
+**Example workflow for Drive sync:**
+1. AI adds a Drive document to test notebook
+2. AI **pauses** and asks you to modify the doc
+3. You make a small change (add text, modify content, etc.)
+4. AI checks freshness (should detect `is_fresh: false`)
+5. AI syncs the document
+6. AI verifies sync worked (`is_fresh: true`)
+
 ---
 
 ## Test Group 1: Authentication & Basic Operations
