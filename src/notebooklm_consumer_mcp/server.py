@@ -1695,24 +1695,6 @@ def save_auth_tokens(
 
 def main():
     """Run the MCP server."""
-    import os
-
-    from .auth import get_cache_path, load_cached_tokens
-
-    # Check authentication sources
-    has_env_auth = bool(os.environ.get("NOTEBOOKLM_COOKIES"))
-    cached_tokens = load_cached_tokens()
-
-    if not has_env_auth and not cached_tokens:
-        print("WARNING: No authentication found.")
-        print()
-        print("Run 'notebooklm-consumer-auth' to authenticate via Chrome.")
-        print("(It will launch Chrome automatically if needed)")
-        print()
-    elif cached_tokens and not has_env_auth:
-        print(f"Using cached auth tokens from {get_cache_path()}")
-
-    print("NotebookLM Consumer MCP Server starting...")
     mcp.run()
     return 0
 
