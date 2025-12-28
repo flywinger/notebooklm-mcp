@@ -125,6 +125,8 @@ src/notebooklm_consumer_mcp/
 | `slide_deck_create` | Generate slide decks (REQUIRES confirmation) |
 | `report_create` | Generate reports - Briefing Doc, Study Guide, Blog Post, Custom (REQUIRES confirmation) |
 | `flashcards_create` | Generate flashcards with difficulty options (REQUIRES confirmation) |
+| `quiz_create` | Generate interactive quizzes (REQUIRES confirmation) |
+| `data_table_create` | Generate data tables from sources (REQUIRES confirmation) |
 | `mind_map_create` | Generate and save mind maps (REQUIRES confirmation) |
 | `mind_map_list` | List all mind maps in a notebook |
 | `studio_status` | Check studio artifact generation status |
@@ -139,8 +141,6 @@ src/notebooklm_consumer_mcp/
 
 ## Features NOT Yet Implemented
 
-- [ ] **Quizzes** - Interactive quizzes (type code 5)
-- [ ] **Data Tables** - Structured data extraction (type code 6)
 - [ ] **Notes** - Save chat responses as notes
 - [ ] **Delete source** - Remove sources
 - [ ] **Share notebook** - Collaboration features

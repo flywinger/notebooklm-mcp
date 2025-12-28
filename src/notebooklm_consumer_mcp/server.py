@@ -1368,6 +1368,125 @@ def flashcards_create(
 
 
 @mcp.tool()
+def quiz_create(
+    notebook_id: str,
+    source_ids: list[str] | None = None,
+    question_count: int = 2,
+    difficulty: int = 2,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Generate quiz. Requires confirm=True after user approval.
+
+    Args:
+        notebook_id: Notebook UUID
+        source_ids: Source IDs (default: all)
+        question_count: Number of questions (default: 2)
+        difficulty: Difficulty level (default: 2)
+        confirm: Must be True after user approval
+    """
+    if not confirm:
+        return {
+            "status": "pending_confirmation",
+            "message": "Please confirm these settings before creating quiz:",
+            "settings": {
+                "notebook_id": notebook_id,
+                "question_count": question_count,
+                "difficulty": difficulty,
+                "source_ids": source_ids or "all sources",
+            },
+            "note": "Set confirm=True after user approves these settings.",
+        }
+
+    try:
+        client = get_client()
+
+        if not source_ids:
+            sources = client.get_notebook_sources_with_types(notebook_id)
+            source_ids = [s["id"] for s in sources if s.get("id")]
+
+        result = client.create_quiz(
+            notebook_id=notebook_id,
+            source_ids=source_ids,
+            question_count=question_count,
+            difficulty=difficulty,
+        )
+
+        if result:
+            return {
+                "status": "success",
+                "artifact_id": result["artifact_id"],
+                "type": "quiz",
+                "question_count": result["question_count"],
+                "difficulty": result["difficulty"],
+                "generation_status": result["status"],
+                "message": "Quiz generation started. Use studio_status to check progress.",
+                "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
+            }
+        return {"status": "error", "error": "Failed to create quiz"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+def data_table_create(
+    notebook_id: str,
+    description: str,
+    source_ids: list[str] | None = None,
+    language: str = "en",
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Generate data table. Requires confirm=True after user approval.
+
+    Args:
+        notebook_id: Notebook UUID
+        description: Description of the data table to create
+        source_ids: Source IDs (default: all)
+        language: Language code (default: "en")
+        confirm: Must be True after user approval
+    """
+    if not confirm:
+        return {
+            "status": "pending_confirmation",
+            "message": "Please confirm these settings before creating data table:",
+            "settings": {
+                "notebook_id": notebook_id,
+                "description": description,
+                "language": language,
+                "source_ids": source_ids or "all sources",
+            },
+            "note": "Set confirm=True after user approves these settings.",
+        }
+
+    try:
+        client = get_client()
+
+        if not source_ids:
+            sources = client.get_notebook_sources_with_types(notebook_id)
+            source_ids = [s["id"] for s in sources if s.get("id")]
+
+        result = client.create_data_table(
+            notebook_id=notebook_id,
+            source_ids=source_ids,
+            description=description,
+            language=language,
+        )
+
+        if result:
+            return {
+                "status": "success",
+                "artifact_id": result["artifact_id"],
+                "type": "data_table",
+                "description": result["description"],
+                "generation_status": result["status"],
+                "message": "Data table generation started. Use studio_status to check progress.",
+                "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
+            }
+        return {"status": "error", "error": "Failed to create data table"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
 def mind_map_create(
     notebook_id: str,
     source_ids: list[str] | None = None,

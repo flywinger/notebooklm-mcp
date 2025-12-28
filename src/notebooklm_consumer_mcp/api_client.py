@@ -144,9 +144,10 @@ class ConsumerNotebookLMClient:
     VIDEO_STYLE_HERITAGE = 9
     VIDEO_STYLE_PAPER_CRAFT = 10
     STUDIO_TYPE_REPORT = 2
-    STUDIO_TYPE_FLASHCARDS = 4
+    STUDIO_TYPE_FLASHCARDS = 4  # Also used for Quiz (differentiated by options)
     STUDIO_TYPE_INFOGRAPHIC = 7
     STUDIO_TYPE_SLIDE_DECK = 8
+    STUDIO_TYPE_DATA_TABLE = 9
     RPC_GENERATE_MIND_MAP = "yyryJe"  # Generate mind map JSON from sources
     RPC_SAVE_MIND_MAP = "CYK0Xb"      # Save generated mind map to notebook
     RPC_LIST_MIND_MAPS = "cFji9"       # List existing mind maps
@@ -1794,9 +1795,10 @@ class ConsumerNotebookLMClient:
                     self.STUDIO_TYPE_AUDIO: "audio",
                     self.STUDIO_TYPE_REPORT: "report",
                     self.STUDIO_TYPE_VIDEO: "video",
-                    self.STUDIO_TYPE_FLASHCARDS: "flashcards",
+                    self.STUDIO_TYPE_FLASHCARDS: "flashcards",  # Also includes Quiz (type 4)
                     self.STUDIO_TYPE_INFOGRAPHIC: "infographic",
                     self.STUDIO_TYPE_SLIDE_DECK: "slide_deck",
+                    self.STUDIO_TYPE_DATA_TABLE: "data_table",
                 }
                 artifact_type = type_map.get(type_code, "unknown")
                 status = "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown"
@@ -2151,6 +2153,124 @@ class ConsumerNotebookLMClient:
                 "type": "flashcards",
                 "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
                 "difficulty": difficulty.lower(),
+            }
+
+        return None
+
+    def create_quiz(
+        self,
+        notebook_id: str,
+        source_ids: list[str],
+        question_count: int = 2,
+        difficulty: int = 2,
+    ) -> dict | None:
+        """Create Quiz from notebook sources.
+
+        Args:
+            notebook_id: Notebook UUID
+            source_ids: List of source UUIDs
+            question_count: Number of questions (default: 2)
+            difficulty: Difficulty level (default: 2)
+        """
+        client = self._get_client()
+        sources_nested = [[[sid]] for sid in source_ids]
+
+        # Quiz options at position 9: [null, [2, null*6, [question_count, difficulty]]]
+        quiz_options = [
+            None,
+            [
+                2,  # Format/variant code
+                None, None, None, None, None, None,
+                [question_count, difficulty]
+            ]
+        ]
+
+        content = [
+            None, None,
+            self.STUDIO_TYPE_FLASHCARDS,  # Type 4 (shared with flashcards)
+            sources_nested,
+            None, None, None, None, None,
+            quiz_options  # position 9
+        ]
+
+        params = [[2], notebook_id, content]
+
+        body = self._build_request_body(self.RPC_CREATE_STUDIO, params)
+        url = self._build_url(self.RPC_CREATE_STUDIO, f"/notebook/{notebook_id}")
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_CREATE_STUDIO)
+
+        if result and isinstance(result, list) and len(result) > 0:
+            artifact_data = result[0]
+            artifact_id = artifact_data[0] if isinstance(artifact_data, list) and len(artifact_data) > 0 else None
+            status_code = artifact_data[4] if isinstance(artifact_data, list) and len(artifact_data) > 4 else None
+
+            return {
+                "artifact_id": artifact_id,
+                "notebook_id": notebook_id,
+                "type": "quiz",
+                "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
+                "question_count": question_count,
+                "difficulty": difficulty,
+            }
+
+        return None
+
+    def create_data_table(
+        self,
+        notebook_id: str,
+        source_ids: list[str],
+        description: str,
+        language: str = "en",
+    ) -> dict | None:
+        """Create Data Table from notebook sources.
+
+        Args:
+            notebook_id: Notebook UUID
+            source_ids: List of source UUIDs
+            description: Description of the data table to create
+            language: Language code (default: "en")
+        """
+        client = self._get_client()
+        sources_nested = [[[sid]] for sid in source_ids]
+
+        # Data Table options at position 18: [null, [description, language]]
+        datatable_options = [None, [description, language]]
+
+        content = [
+            None, None,
+            self.STUDIO_TYPE_DATA_TABLE,  # Type 9
+            sources_nested,
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,  # 14 nulls (positions 4-17)
+            datatable_options  # position 18
+        ]
+
+        params = [[2], notebook_id, content]
+
+        body = self._build_request_body(self.RPC_CREATE_STUDIO, params)
+        url = self._build_url(self.RPC_CREATE_STUDIO, f"/notebook/{notebook_id}")
+
+        response = client.post(url, content=body)
+        response.raise_for_status()
+
+        parsed = self._parse_response(response.text)
+        result = self._extract_rpc_result(parsed, self.RPC_CREATE_STUDIO)
+
+        if result and isinstance(result, list) and len(result) > 0:
+            artifact_data = result[0]
+            artifact_id = artifact_data[0] if isinstance(artifact_data, list) and len(artifact_data) > 0 else None
+            status_code = artifact_data[4] if isinstance(artifact_data, list) and len(artifact_data) > 4 else None
+
+            return {
+                "artifact_id": artifact_id,
+                "notebook_id": notebook_id,
+                "type": "data_table",
+                "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
+                "description": description,
             }
 
         return None

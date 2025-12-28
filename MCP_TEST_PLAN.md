@@ -1,6 +1,6 @@
 # NotebookLM Consumer MCP - Comprehensive Test Plan
 
-**Purpose:** Verify all 28 MCP tools work correctly after optimization.
+**Purpose:** Verify all 30 MCP tools work correctly after optimization.
 
 **Prerequisites:**
 - MCP server installed: `uv cache clean && uv tool install --force .`
@@ -367,6 +367,40 @@ Show settings first.
 
 ---
 
+### Test 6.5 - Create Quiz (with confirmation)
+**Tool:** `quiz_create`
+
+**Prompt:**
+```
+Create a quiz for notebook [notebook_id] with 2 questions and difficulty level 2.
+Show settings first.
+```
+
+**Expected:** Settings shown.
+
+**Follow-up:** Approve and create.
+
+**Expected:** Quiz generation started.
+
+---
+
+### Test 6.6 - Create Data Table (with confirmation)
+**Tool:** `data_table_create`
+
+**Prompt:**
+```
+Create a data table for notebook [notebook_id] extracting "Key features and capabilities" in English.
+Show settings first.
+```
+
+**Expected:** Settings shown.
+
+**Follow-up:** Approve and create.
+
+**Expected:** Data table generation started.
+
+---
+
 ## Test Group 7: Mind Maps
 
 ### Test 7.1 - Create Mind Map (with confirmation)
@@ -465,13 +499,13 @@ After completing all tests, verify:
 
 **Studio Audio/Video (4):** audio_overview_create, video_overview_create, studio_status, studio_delete
 
-**Studio Other (4):** infographic_create, slide_deck_create, report_create, flashcards_create
+**Studio Other (6):** infographic_create, slide_deck_create, report_create, flashcards_create, quiz_create, data_table_create
 
 **Mind Maps (2):** mind_map_create, mind_map_list
 
 **Cleanup (1):** notebook_delete
 
-**Total: 28 tools**
+**Total: 30 tools**
 
 ---
 

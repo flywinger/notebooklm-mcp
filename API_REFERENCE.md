@@ -706,6 +706,77 @@ params = [
 
 ---
 
+## Quiz RPCs
+
+Quizzes use the same `R7cb6c` RPC with **type code 4** (shared with Flashcards) but with different options structure.
+
+### Quiz Request Structure
+```python
+params = [
+    [2],                           # Config
+    notebook_id,                   # Notebook UUID
+    [
+        None, None,
+        4,                         # STUDIO_TYPE_FLASHCARDS (shared with Quiz)
+        [[[source_id1]], [[source_id2]], ...],  # Source IDs (nested arrays)
+        None, None, None, None, None,  # 5 nulls (positions 4-8)
+        [
+            None,
+            [
+                2,                     # Format/variant code (distinguishes Quiz from Flashcards)
+                None, None, None, None, None, None,
+                [question_count, difficulty]  # [questions, difficulty_level]
+            ]
+        ]
+    ]
+]
+```
+
+### Quiz Options
+
+| Option | Values |
+|--------|--------|
+| **Question Count** | Integer (default: 2) |
+| **Difficulty** | Integer (default: 2) |
+
+**Key Difference from Flashcards:** Quiz uses format code `2` at the first position of the options array, while Flashcards use `1`.
+
+---
+
+## Data Table RPCs
+
+Data Tables use the `R7cb6c` RPC with **type code 9** (STUDIO_TYPE_DATA_TABLE).
+
+### Data Table Request Structure
+```python
+params = [
+    [2],                           # Config
+    notebook_id,                   # Notebook UUID
+    [
+        None, None,
+        9,                         # STUDIO_TYPE_DATA_TABLE
+        [[[source_id1]], [[source_id2]], ...],  # Source IDs (nested arrays)
+        None, None, None, None, None, None, None, None, None, None,  # 10 nulls (positions 4-13)
+        None, None, None, None,    # 4 more nulls (positions 14-17)
+        [
+            None,
+            [description, language]  # ["Description of table", "en"]
+        ]
+    ]
+]
+```
+
+### Data Table Options
+
+| Option | Description |
+|--------|-------------|
+| **Description** | String describing what data to extract (required) |
+| **Language** | Language code (default: "en") |
+
+**Note:** Data table options appear at position 18 in the content array, requiring 14 nulls after the sources.
+
+---
+
 ## Mind Map RPCs
 
 Mind Maps use a **two-step process** with separate Generate and Save RPCs.
