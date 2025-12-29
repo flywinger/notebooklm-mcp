@@ -1,5 +1,7 @@
 # NotebookLM Consumer MCP Server
 
+![NotebookLM MCP Header](docs/media/header.png)
+
 An MCP server for **Consumer NotebookLM** (notebooklm.google.com) - the free/personal tier.
 
 > **Note:** This is NOT for NotebookLM Enterprise (Vertex AI). Those are completely separate systems.
