@@ -8,7 +8,7 @@ An MCP server for **NotebookLM** (notebooklm.google.com).
 
 📺 **Watch the Demo** - See the MCP in action!
 
-[![NotebookLM MCP Demo](https://img.youtube.com/vi/d-PZDQlO4m4/maxresdefault.jpg)](https://www.youtube.com/watch?v=d-PZDQlO4m4)
+[![NotebookLM MCP Demo](https://img.youtube.com/vi/d-PZDQlO4m4/hqdefault.jpg)](https://www.youtube.com/watch?v=d-PZDQlO4m4)
 
 ## Features
 
