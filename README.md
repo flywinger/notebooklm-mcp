@@ -179,7 +179,7 @@ For IDEs that use JSON configuration files for MCP servers:
   "mcpServers": {
     "notebooklm-mcp": {
       "command": "uvx",
-      "args": ["notebooklm-mcp-server"]
+      "args": ["--from", "notebooklm-mcp-server", "notebooklm-mcp"]
     }
   }
 }
@@ -231,7 +231,7 @@ Add to `~/.gemini/settings.json` under `mcpServers`:
 ```json
 "notebooklm-mcp": {
   "command": "uvx",
-  "args": ["notebooklm-mcp-server"]
+  "args": ["--from", "notebooklm-mcp-server", "notebooklm-mcp"]
 }
 ```
 
