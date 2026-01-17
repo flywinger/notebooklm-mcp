@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2026-01-17
+
+### Added
+- **Source type constants** for proper identification of additional source types:
+  - `SOURCE_TYPE_UPLOADED_FILE` (11): Direct file uploads (e.g., .docx uploaded directly)
+  - `SOURCE_TYPE_IMAGE` (13): Image files (GIF, JPEG, PNG)
+  - `SOURCE_TYPE_WORD_DOC` (14): Word documents via Google Drive
+- Updated `SOURCE_TYPES` CodeMapper with `uploaded_file`, `image`, and `word_doc` mappings
+
 ## [0.1.12] - 2026-01-16
 
 ### Fixed
