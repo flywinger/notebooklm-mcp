@@ -1393,6 +1393,44 @@ class NotebookLMClient:
                 return {"id": source_id, "title": source_title}
         return None
 
+    def upload_file(
+        self,
+        notebook_id: str,
+        file_path: str,
+        headless: bool = False,
+        profile_name: str = "default",
+    ) -> bool:
+        """Upload a local file to a notebook using Chrome automation.
+
+        This method uses the same Chrome profile that was used during login,
+        which already contains authentication cookies. Chrome is launched
+        (visible by default) to perform the upload via browser automation.
+
+        Args:
+            notebook_id: The notebook ID to upload to
+            file_path: Path to the local file to upload
+            headless: Whether to use headless Chrome (default: False for better compatibility)
+            profile_name: Name of the profile to use (default: "default")
+
+        Returns:
+            True if upload succeeded
+
+        Raises:
+            RuntimeError: If BrowserUploader dependencies are missing
+            NLMError: If upload fails or authentication is required
+        """
+        try:
+            from notebooklm_tools.core.uploader import BrowserUploader
+            uploader = BrowserUploader(profile_name=profile_name, headless=headless)
+            try:
+                return uploader.upload_file(notebook_id, file_path)
+            finally:
+                uploader.close()
+        except ImportError as e:
+            raise RuntimeError(
+                "BrowserUploader not available. Install with: pip install websocket-client"
+            ) from e
+
     def query(
         self,
         notebook_id: str,

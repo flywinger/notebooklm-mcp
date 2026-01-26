@@ -60,22 +60,32 @@ def add_source(
     text: Optional[str] = typer.Option(None, "--text", "-t", help="Text content to add"),
     drive: Optional[str] = typer.Option(None, "--drive", "-d", help="Google Drive document ID"),
     youtube: Optional[str] = typer.Option(None, "--youtube", "-y", help="YouTube URL"),
+    file: Optional[str] = typer.Option(None, "--file", "-f", help="Local file to upload (PDF, etc.)"),
     title: str = typer.Option("", "--title", help="Title for the source"),
     doc_type: str = typer.Option("doc", "--type", help="Drive doc type: doc, slides, sheets, pdf"),
+    headless: bool = typer.Option(False, "--headless", help="Use headless Chrome for file upload"),
     profile: Optional[str] = typer.Option(None, "--profile", "-p", help="Profile to use"),
 ) -> None:
-    """Add a source to a notebook."""
+    """Add a source to a notebook.
+
+    Examples:
+        nlm source add <notebook-id> --url https://example.com
+        nlm source add <notebook-id> --text "Some content" --title "My Notes"
+        nlm source add <notebook-id> --file document.pdf
+        nlm source add <notebook-id> --youtube https://youtube.com/watch?v=...
+        nlm source add <notebook-id> --drive <doc-id> --title "My Doc"
+    """
     notebook_id = get_alias_manager().resolve(notebook_id)
-    
+
     # Validate that exactly one source type is provided
-    source_count = sum(1 for x in [url, text, drive, youtube] if x)
+    source_count = sum(1 for x in [url, text, drive, youtube, file] if x)
     if source_count == 0:
-        console.print("[red]Error:[/red] Please specify a source: --url, --text, --drive, or --youtube")
+        console.print("[red]Error:[/red] Please specify a source: --url, --text, --file, --drive, or --youtube")
         raise typer.Exit(1)
     if source_count > 1:
         console.print("[red]Error:[/red] Please specify only one source type at a time")
         raise typer.Exit(1)
-    
+
     try:
         with get_client(profile) as client:
             if url:
@@ -92,14 +102,40 @@ def add_source(
                     title = f"Drive Document ({drive[:8]}...)"
                 result = client.add_source_drive(notebook_id, drive, title, doc_type)
                 source_desc = title
+            elif file:
+                from pathlib import Path
+                file_path = Path(file)
+                if not file_path.exists():
+                    console.print(f"[red]Error:[/red] File not found: {file}")
+                    raise typer.Exit(1)
+
+                console.print(f"[blue]Uploading {file_path.name} via browser automation...[/blue]")
+                if headless:
+                    console.print("[dim]Using headless Chrome (experimental)[/dim]")
+
+                # Use client's upload_file method which handles browser automation
+                result = client.upload_file(
+                    notebook_id,
+                    str(file_path),
+                    headless=headless,
+                    profile_name=profile or "default"
+                )
+                source_desc = file_path.name
             else:
                 raise typer.Exit(1)  # Should never reach here
-        
-        # API returns raw result, not a Source object
-        if result is not None:
-            console.print(f"[green]✓[/green] Added source: {source_desc}")
+
+        # API returns raw result, not a Source object (except for file upload)
+        if file:
+            # File upload returns boolean
+            if result:
+                console.print(f"[green]✓[/green] Uploaded file: {source_desc}")
+            else:
+                console.print(f"[yellow]⚠[/yellow] Upload may have failed")
         else:
-            console.print(f"[yellow]⚠[/yellow] Source may have been added (no confirmation from API)")
+            if result is not None:
+                console.print(f"[green]✓[/green] Added source: {source_desc}")
+            else:
+                console.print(f"[yellow]⚠[/yellow] Source may have been added (no confirmation from API)")
     except NLMError as e:
         console.print(f"[red]Error:[/red] {e.message}")
         if e.hint:

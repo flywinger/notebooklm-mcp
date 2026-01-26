@@ -67,12 +67,27 @@ def get_cache_path() -> Path:
 
 
 def load_cached_tokens() -> AuthTokens | None:
-    """Load tokens from cache if they exist.
+    """Load tokens from cache (default profile or legacy file).
 
     Note: We no longer reject tokens based on age. The functional check
     (redirect to login during CSRF refresh) is the real validity test.
     Cookies often last much longer than any arbitrary time limit.
     """
+    # 1. Try default profile first (Unified Auth)
+    try:
+        manager = get_auth_manager()
+        if manager.profile_exists():
+            profile = manager.load_profile()
+            return AuthTokens(
+                cookies=profile.cookies,
+                csrf_token=profile.csrf_token or "",
+                session_id=profile.session_id or "",
+                extracted_at=profile.last_validated.timestamp() if profile.last_validated else time.time()
+            )
+    except Exception:
+        pass
+
+    # 2. Fallback to legacy auth cache
     cache_path = get_cache_path()
     if not cache_path.exists():
         return None

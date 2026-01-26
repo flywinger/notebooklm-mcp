@@ -293,6 +293,21 @@ def get_page_html(ws_url: str) -> str:
     return result.get("result", {}).get("value", "")
 
 
+def get_document_root(ws_url: str) -> dict:
+    """Get the document root node."""
+    return execute_cdp_command(ws_url, "DOM.getDocument")["root"]
+
+
+def query_selector(ws_url: str, node_id: int, selector: str) -> int | None:
+    """Find a node ID using a CSS selector."""
+    result = execute_cdp_command(
+        ws_url, 
+        "DOM.querySelector",
+        {"nodeId": node_id, "selector": selector}
+    )
+    return result.get("nodeId") if result.get("nodeId") != 0 else None
+
+
 def get_current_url(ws_url: str) -> str:
     """Get the current page URL."""
     execute_cdp_command(ws_url, "Runtime.enable")

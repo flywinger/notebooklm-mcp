@@ -124,6 +124,32 @@ class TestSourceOperations:
         assert isinstance(sources, list)
         print(f"Found {len(sources)} sources in test notebook")
 
+    @pytest.mark.skipif(
+        not os.environ.get("NOTEBOOKLM_E2E_UPLOAD"),
+        reason="Skipping browser upload test. Set NOTEBOOKLM_E2E_UPLOAD=1 to run."
+    )
+    def test_upload_file(self, client, test_notebook):
+        """Test uploading a file via browser automation."""
+        # Create a dummy file
+        dummy_path = Path("test_upload.txt")
+        dummy_path.write_text("This is a test upload file content.")
+        
+        try:
+            print(f"Uploading {dummy_path} to {test_notebook.id}...")
+            result = client.upload_file(test_notebook.id, str(dummy_path))
+            assert result is True
+            print("Upload successful")
+            
+            # Verify source appears
+            time.sleep(5)
+            sources = client.get_notebook_sources_with_types(test_notebook.id)
+            titles = [s["title"] for s in sources]
+            assert "test_upload.txt" in titles
+            
+        finally:
+            if dummy_path.exists():
+                dummy_path.unlink()
+
 
 class TestQueryOperations:
     """Test notebook query operations."""
