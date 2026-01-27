@@ -53,7 +53,8 @@ Studio_tools_plan.md
 CLAUDE.local.md
 PROJECT_RECAP.md
 todo.md
-.notebooklm-py-analysis/
+.notebooklm*/
+
 
 # Data and Artifacts
 download/
