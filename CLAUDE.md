@@ -113,10 +113,7 @@ src/notebooklm_tools/
 | `notebook_rename` | Rename a notebook |
 | `chat_configure` | Configure chat goal/style and response length |
 | `notebook_delete` | Delete a notebook (REQUIRES confirmation) |
-| `notebook_add_url` | Add URL/YouTube source |
-| `notebook_add_text` | Add pasted text source |
-| `notebook_add_drive` | Add Google Drive source |
-| `notebook_add_file` | Add local file source (PDF, TXT, etc.) |
+| `source_add` | Add source (url, text, drive, file) |
 | `notebook_query` | Ask questions (AI answers!) |
 | `source_list_drive` | List sources with types, check Drive freshness |
 | `source_sync_drive` | Sync stale Drive sources (REQUIRES confirmation) |
@@ -124,31 +121,15 @@ src/notebooklm_tools/
 | `research_start` | Start Web or Drive research to discover sources |
 | `research_status` | Check research progress and get results |
 | `research_import` | Import discovered sources into notebook |
-| `audio_overview_create` | Generate audio podcasts (REQUIRES confirmation) |
-| `video_overview_create` | Generate video overviews (REQUIRES confirmation) |
-| `infographic_create` | Generate infographics (REQUIRES confirmation) |
-| `slide_deck_create` | Generate slide decks (REQUIRES confirmation) |
-| `report_create` | Generate reports - Briefing Doc, Study Guide, Blog Post, Custom (REQUIRES confirmation) |
-| `flashcards_create` | Generate flashcards with difficulty options (REQUIRES confirmation) |
-| `quiz_create` | Generate interactive quizzes (REQUIRES confirmation) |
-| `data_table_create` | Generate data tables from sources (REQUIRES confirmation) |
-| `mind_map_create` | Generate and save mind maps (REQUIRES confirmation) |
-| `download_audio` | Download Audio Overview to file (MP4/MP3) |
-| `download_video` | Download Video Overview to file (MP4) |
-| `download_infographic` | Download Infographic to file (PNG) |
-| `download_slide_deck` | Download Slide Deck to file (PDF) |
-| `download_report` | Download Report to file (Markdown) |
-| `download_data_table` | Download Data Table to file (CSV) |
-| `download_mind_map` | Download Mind Map to file (JSON) |
-| `download_quiz` | Download Quiz to file (JSON/Markdown/HTML) |
-| `download_flashcards` | Download Flashcards to file (JSON/Markdown/HTML) |
-
+| `studio_create` | Generate unified content (audio, video, infographic, slides, etc.) |
+| `download_artifact` | Download any artifact (audio, video, pdf, markdown, json) |
 | `studio_status` | Check studio artifact generation status |
 | `studio_delete` | Delete studio artifacts (REQUIRES confirmation) |
 | `notebook_share_status` | Get sharing settings and collaborators |
 | `notebook_share_public` | Enable/disable public link access |
 | `notebook_share_invite` | Invite collaborator by email |
 | `save_auth_tokens` | Save tokens extracted via Chrome DevTools MCP |
+| `refresh_auth` | Reload auth tokens or run headless auth |
 
 **IMPORTANT - Operations Requiring Confirmation:**
 - `notebook_delete` requires `confirm=True` - deletion is IRREVERSIBLE
