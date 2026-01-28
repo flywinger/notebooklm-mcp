@@ -489,20 +489,27 @@ Extract the following from client.py to base.py:
 
 ## Phase 2: Extract Operation Mixins
 
+> **Architecture Note:** Each mixin inherits from `BaseClient` and contains domain-specific methods. The final `NotebookLMClient` uses multiple inheritance to compose all mixins.
+
+---
+
 ### Task 5: Create notebooks.py mixin
 
 **Files:**
 - Create: `src/notebooklm_tools/core/notebooks.py`
+- Create: `tests/core/test_notebooks.py`
 - Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `list_notebooks`
-- `get_notebook`
-- `create_notebook`
-- `rename_notebook`
-- `delete_notebook`
-- `configure_chat`
-- `get_notebook_summary`
+**Methods to extract (7 methods, ~340 lines):**
+- `list_notebooks` (lines 148-248)
+- `get_notebook` (lines 250-256)
+- `get_notebook_summary` (lines 258-284)
+- `create_notebook` (lines 393-406)
+- `rename_notebook` (lines 408-412)
+- `configure_chat` (lines 414-458)
+- `delete_notebook` (lines 460-484)
+
+**Test Strategy:** Mock `_call_rpc` and verify correct RPC IDs are called with expected parameters.
 
 ---
 
@@ -510,11 +517,13 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/sharing.py`
+- Create: `tests/core/test_sharing.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `get_share_status`
-- `set_public_access`
-- `add_collaborator`
+**Methods to extract (3 methods, ~140 lines):**
+- `get_share_status` (lines 490-553)
+- `set_public_access` (lines 555-580)
+- `add_collaborator` (lines 582-620)
 
 ---
 
@@ -522,19 +531,21 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/sources.py`
+- Create: `tests/core/test_sources.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `add_url_source`
-- `add_text_source`
-- `add_drive_source`
-- `upload_file`
-- `get_notebook_sources_with_types`
-- `get_source_guide`
-- `get_source_fulltext`
-- `check_source_freshness`
-- `sync_drive_source`
-- `delete_source`
-- `_extract_all_text`
+**Methods to extract (12 methods, ~400 lines):**
+- `get_source_guide` (lines 286-306)
+- `get_source_fulltext` (lines 308-381)
+- `_extract_all_text` (lines 383-391)
+- `check_source_freshness` (lines 622-643)
+- `sync_drive_source` (lines 645-681)
+- `delete_source` (lines 683-710)
+- `get_notebook_sources_with_types` (lines 712-765)
+- `add_url_source` (lines 768-815)
+- `add_text_source` (lines 817-853)
+- `add_drive_source` (lines 855-910)
+- `upload_file` (lines 912-948)
 
 ---
 
@@ -542,18 +553,19 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/query.py`
+- Create: `tests/core/test_query.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `_build_conversation_history`
-- `_cache_conversation_turn`
-- `clear_conversation`
-- `get_conversation_history`
-- `query` (FIX: Currently appears as docstring only around line 2052)
-- `_parse_query_response`
-- `_extract_answer_from_chunk`
-- `_extract_source_ids_from_notebook`
+**Methods to extract (7 methods, ~230 lines):**
+- `_build_conversation_history` (lines 84-110)
+- `_cache_conversation_turn` (lines 112-122)
+- `clear_conversation` (lines 124-130)
+- `get_conversation_history` (lines 132-142)
+- `_extract_source_ids_from_notebook` (lines 1355-1381)
+- `_parse_query_response` (lines 1383-1444)
+- `_extract_answer_from_chunk` (lines 1446-1504)
 
-**NOTE:** Investigate and fix the missing `def query()` method.
+**Note:** The `query()` method needs to be located - it may be a docstring issue.
 
 ---
 
@@ -561,11 +573,13 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/research.py`
+- Create: `tests/core/test_research.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `start_research`
-- `poll_research`
-- `import_research_sources`
+**Methods to extract (3 methods, ~300 lines):**
+- `start_research` (lines 1506-1563)
+- `poll_research` (lines 1565-1710)
+- `import_research_sources` (lines 1713-1800)
 
 ---
 
@@ -573,19 +587,21 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/studio.py`
+- Create: `tests/core/test_studio.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `create_audio_overview`
-- `create_video_overview`
-- `create_infographic`
-- `create_slide_deck`
-- `create_report`
-- `create_flashcards`
-- `create_quiz`
-- `create_data_table`
-- `poll_studio_status`
-- `get_studio_status`
-- `delete_studio_artifact`
+**Methods to extract (11 methods, ~600 lines):**
+- `create_audio_overview` (lines 1802-1870)
+- `create_video_overview` (lines 1872-1939)
+- `poll_studio_status` (lines 1941-2080)
+- `get_studio_status` (lines 2083-2085)
+- `delete_studio_artifact` (lines 2087-2114)
+- `create_infographic` (lines 2156-2214)
+- `create_slide_deck` (lines 2216-2273)
+- `create_report` (lines 2275-2390)
+- `create_flashcards` (lines 2392-2454)
+- `create_quiz` (lines 2456-2517)
+- `create_data_table` (lines 2519-2572)
 
 ---
 
@@ -593,12 +609,14 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/mind_maps.py`
+- Create: `tests/core/test_mind_maps.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `generate_mind_map`
-- `save_mind_map`
-- `list_mind_maps`
-- `delete_mind_map`
+**Methods to extract (4 methods, ~180 lines):**
+- `generate_mind_map` (lines 2574-2629)
+- `save_mind_map` (lines 2631-2691)
+- `list_mind_maps` (lines 2693-2744)
+- `delete_mind_map` (lines 2116-2154)
 
 ---
 
@@ -606,31 +624,33 @@ Extract the following from client.py to base.py:
 
 **Files:**
 - Create: `src/notebooklm_tools/core/downloads.py`
+- Create: `tests/core/test_downloads.py`
+- Modify: `src/notebooklm_tools/core/client.py`
 
-**Methods to extract:**
-- `_download_url`
-- `_list_raw`
-- `download_audio`
-- `download_video`
-- `download_infographic`
-- `download_slide_deck`
-- `download_report`
-- `download_mind_map`
-- `download_data_table`
-- `download_quiz`
-- `download_flashcards`
-- `_download_interactive_artifact`
-- `_get_artifact_content`
-- `_extract_app_data`
-- `_parse_data_table`
-- `_extract_cell_text`
-- `_format_quiz_markdown`
-- `_format_flashcards_markdown`
-- `_format_interactive_content`
+**Methods to extract (18 methods, ~850 lines):**
+- `_download_url` (lines 954-1076)
+- `_list_raw` (lines 1078-1105)
+- `download_audio` (lines 1107-1174)
+- `download_video` (lines 1176-1353)
+- `download_infographic` (lines 2755-2810)
+- `download_slide_deck` (lines 2813-2868)
+- `download_report` (lines 2871-2926)
+- `download_mind_map` (lines 2928-2981)
+- `download_data_table` (lines 3185-3240)
+- `download_quiz` (needs location)
+- `download_flashcards` (needs location)
+- `_get_artifact_content` (lines 3242-3297)
+- `_extract_app_data` (lines 3299-3375)
+- `_format_quiz_markdown` (lines 3377-3405)
+- `_format_flashcards_markdown` (lines 3407-3433)
+- `_format_interactive_content` (lines 3435-3471)
+- `_download_interactive_artifact` (lines 3473-3563)
+- `_extract_cell_text` (lines 2983-3025)
+- `_parse_data_table` (lines 3027-3183)
 
 ---
 
-## Phase 2.5: Comprehensive Integration Testing
+## Phase 2.5: Final Integration
 
 Before finalizing the architecture, create a comprehensive test suite to catch any regressions.
 
