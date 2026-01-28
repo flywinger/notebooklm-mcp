@@ -79,7 +79,6 @@ def add_source(
     file: Optional[str] = typer.Option(None, "--file", "-f", help="Local file to upload (PDF, etc.)"),
     title: str = typer.Option("", "--title", help="Title for the source"),
     doc_type: str = typer.Option("doc", "--type", help="Drive doc type: doc, slides, sheets, pdf"),
-    browser: bool = typer.Option(False, "--browser", "-b", help="Use Chrome browser for upload (fallback)"),
     profile: Optional[str] = typer.Option(None, "--profile", "-p", help="Profile to use"),
 ) -> None:
     """Add a source to a notebook.
@@ -125,33 +124,19 @@ def add_source(
                     console.print(f"[red]Error:[/red] File not found: {file}")
                     raise typer.Exit(1)
 
-                if browser:
-                    # Fallback: Use Chrome browser automation
-                    console.print(f"[blue]Uploading {file_path.name} via browser...[/blue]")
-                    result = client.upload_file_browser(
-                        notebook_id,
-                        str(file_path),
-                        profile_name=profile or "default"
-                    )
-                    if result:
-                        console.print(f"[green]✓[/green] Uploaded: {file_path.name}")
-                    else:
-                        console.print(f"[yellow]⚠[/yellow] Upload may have failed")
-                    return
-                else:
-                    # Primary: Use HTTP resumable upload
-                    console.print(f"[blue]Uploading {file_path.name}...[/blue]")
-                    result = client.add_file(notebook_id, file_path)
-                    source_desc = file_path.name
+                # Use HTTP resumable upload
+                console.print(f"[blue]Uploading {file_path.name}...[/blue]")
+                result = client.add_file(notebook_id, file_path)
+                source_desc = file_path.name
             else:
                 raise typer.Exit(1)  # Should never reach here
 
         # API returns raw result, not a Source object (except for file upload)
-        if file and not browser:
+        if file:
             # HTTP add_file returns dict with 'id' and 'title'
             console.print(f"[green]✓[/green] Uploaded: {result['title']}")
             console.print(f"[dim]Source ID: {result['id']}[/dim]")
-        elif not file:
+        else:
             if result is not None:
                 console.print(f"[green]✓[/green] Added source: {source_desc}")
             else:

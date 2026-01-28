@@ -310,6 +310,7 @@ def query_selector(ws_url: str, node_id: int, selector: str) -> int | None:
     return result.get("nodeId") if result.get("nodeId") != 0 else None
 
 
+
 def get_current_url(ws_url: str) -> str:
     """Get the current page URL."""
     execute_cdp_command(ws_url, "Runtime.enable")

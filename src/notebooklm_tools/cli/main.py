@@ -268,9 +268,10 @@ def cli_main():
         # Import here to avoid circular dependencies
         from notebooklm_tools.core.exceptions import (
             AuthenticationError,
-            ClientAuthenticationError,
             NLMError,
         )
+        from notebooklm_tools.core.errors import ClientAuthenticationError
+
 
         # Handle authentication errors cleanly
         if isinstance(e, (AuthenticationError, ClientAuthenticationError)):

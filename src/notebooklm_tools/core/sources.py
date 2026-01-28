@@ -523,58 +523,6 @@ class SourceMixin(BaseClient):
 
         return result
 
-    def upload_file_browser(
-        self,
-        notebook_id: str,
-        file_path: str,
-        profile_name: str = "default",
-    ) -> bool:
-        """Upload a local file using Chrome browser automation (fallback method).
-
-        This is a fallback for cases where HTTP upload fails. Requires Chrome.
-        Primary method is add_file() which uses HTTP resumable upload.
-
-        Supported file types: PDF, TXT, MD, DOCX, CSV, MP3, MP4, JPG, PNG
-
-        This method uses the same Chrome profile that was used during login,
-        which already contains authentication cookies. Chrome is launched
-        visibly to perform the upload via browser automation.
-
-        Args:
-            notebook_id: The notebook ID to upload to
-            file_path: Path to the local file to upload
-            profile_name: Name of the profile to use (default: "default")
-
-        Returns:
-            True if upload succeeded
-
-        Raises:
-            RuntimeError: If BrowserUploader dependencies are missing
-            NLMError: If upload fails or authentication is required
-            FileValidationError: If file type is not supported
-        """
-        # Validate file type
-        file_path_obj = Path(file_path)
-        supported_extensions = {'.pdf', '.txt', '.md', '.docx', '.csv', '.mp3', '.mp4', '.jpg', '.jpeg', '.png'}
-        file_extension = file_path_obj.suffix.lower()
-        if file_extension not in supported_extensions:
-            raise FileValidationError(
-                f"Unsupported file type: {file_extension}\n"
-                f"Supported types: {', '.join(sorted(supported_extensions))}"
-            )
-
-        try:
-            from notebooklm_tools.core.uploader import BrowserUploader
-            uploader = BrowserUploader(profile_name=profile_name, headless=False)
-            try:
-                return uploader.upload_file(notebook_id, file_path)
-            finally:
-                uploader.close()
-        except ImportError as e:
-            raise RuntimeError(
-                "BrowserUploader not available. Install with: pip install websocket-client"
-            ) from e
-
     def get_source_guide(self, source_id: str) -> dict[str, Any]:
         """Get AI-generated summary and keywords for a source."""
         result = self._call_rpc(self.RPC_GET_SOURCE_GUIDE, [[[[source_id]]]], "/")
