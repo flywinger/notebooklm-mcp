@@ -105,7 +105,10 @@ uv run pytest tests/test_api_client.py
 
 - `src/notebooklm_tools/`
     - `cli/`: CLI commands and formatting
-    - `mcp/server.py`: MCP server with tool definitions
+    - `mcp/`: MCP Server implementation
+        - `logs/`: Logging configuration
+        - `tools/`: Modular tool definitions (`files.py` for each domain)
+        - `server.py`: Slim server facade (imports tools from modules)
     - `core/client.py`: The core logic. Contains the internal API calls.
     - `core/constants.py`: Single source of truth for all API code-name mappings.
     - `core/auth.py`: Handles token validation, storage, and loading.
