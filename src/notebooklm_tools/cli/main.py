@@ -146,8 +146,12 @@ def login(
             p = auth.load_profile()
             console.print(f"[dim]Checking credentials for profile: {p.name}...[/dim]")
             
-            # Actually test the API
-            with NotebookLMClient(profile=profile) as client:
+            # Actually test the API using profile's credentials
+            with NotebookLMClient(
+                cookies=p.cookies,
+                csrf_token=p.csrf_token or "",
+                session_id=p.session_id or "",
+            ) as client:
                 notebooks = client.list_notebooks()
             
             # Success! Update last validated
