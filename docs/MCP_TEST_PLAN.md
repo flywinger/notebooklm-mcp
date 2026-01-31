@@ -1,15 +1,14 @@
 # NotebookLM MCP - Comprehensive Test Plan
 
-**Purpose:** Verify all **30 consolidated MCP tools** work correctly.
+**Purpose:** Verify all **28 consolidated MCP tools** work correctly.
 
-**Version:** 2.1 (Updated 2026-01-28 after notes API implementation)
+**Version:** 2.2 (Updated 2026-01-31 - corrected tool count)
 
-**Changes from v2.0:**
-- Added notes management: 4 new tools (`note_create`, `note_list`, `note_update`, `note_delete`)
-- Total tools: 26 → 30
+**Changes from v2.1:**
+- Corrected tool count: 28 tools (notes consolidated into single `note` tool)
 
 **Changes from v1:**
-- Tools consolidated: 46 → 26 (-43%)
+- Tools consolidated: 45+ → 28 (-38%)
 - `source_add(type=...)` replaces 4 source tools
 - `studio_create(type=...)` replaces 9 creation tools
 - `download_artifact(type=...)` replaces 9 download tools

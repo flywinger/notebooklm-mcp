@@ -122,7 +122,7 @@ This release unifies the previously separate `notebooklm-cli` and `notebooklm-mc
 #### MCP Server Improvements
 - HTTP transport mode (`notebooklm-mcp --transport http --port 8000`)
 - Debug logging (`notebooklm-mcp --debug`)
-- Consolidated from 45+ tools down to 26 unified tools
+- Consolidated from 45+ tools down to 28 unified tools
 - Modular server architecture with mixins
 
 #### Research Improvements

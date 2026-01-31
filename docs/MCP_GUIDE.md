@@ -1,6 +1,6 @@
 # MCP Guide
 
-Complete reference for the NotebookLM MCP server - **31 tools** for AI assistants.
+Complete reference for the NotebookLM MCP server - **28 tools** for AI assistants.
 
 ## Installation
 
@@ -198,7 +198,7 @@ studio_create(notebook_id, artifact_type="report", report_format="Study Guide", 
 
 ## Context Window Tips
 
-This MCP has **31 tools** which consume context. Best practices:
+This MCP has **28 tools** which consume context. Best practices:
 
 - **Disable when not using**: In Claude Code, use `@notebooklm-mcp` to toggle
 - **Use unified tools**: `source_add`, `studio_create`, `download_artifact` handle multiple operations each
